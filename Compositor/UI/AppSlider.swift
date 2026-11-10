@@ -102,7 +102,11 @@ struct SliderTrackView: View {
         let shape = RoundedRectangle(cornerRadius: SliderGeometry.knobSize.width / 2, style: .continuous)
         return Group {
             if grab != nil {
-                shape.fill(.clear).glassEffect(.clear, in: shape)
+                if #available(macOS 26.0, *) {
+                    shape.fill(.clear).glassEffect(.clear, in: shape)
+                } else {
+                    shape.fill(.ultraThinMaterial)
+                }
             } else {
                 shape.fill(Color(white: 0.92)).shadow(color: .black.opacity(0.35), radius: 1, y: 0.5)
             }

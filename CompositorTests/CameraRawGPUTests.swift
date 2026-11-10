@@ -179,12 +179,20 @@ struct CameraRawGPUTests {
         _ = try #require(MetalCameraRawLookup.shared)
         let width = 1024, height = 1024
         let context = try DeepLayer.context(width: width, height: height, hdr: true)
-        let pixels = try #require(context.data).assumingMemoryBound(to: Float16.self)
+        let pixels = try #require(context.data).assumingMemoryBound(to: UInt16.self)
+        func half(_ f: Float) -> UInt16 {
+            let bits = f.bitPattern
+            let sign = UInt16((bits >> 16) & 0x8000)
+            let e = Int((bits >> 23) & 0xff) - 127 + 15
+            if e <= 0 { return sign }
+            if e >= 31 { return sign | 0x7c00 }
+            return sign | (UInt16(e) << 10) | UInt16((bits >> 13) & 0x3ff)
+        }
         for index in 0..<(width * height) {
-            pixels[index * 4] = Float16(Float(index % 1024) / 256)
-            pixels[index * 4 + 1] = Float16(Float(index % 512) / 256)
-            pixels[index * 4 + 2] = Float16(0.3)
-            pixels[index * 4 + 3] = 1
+            pixels[index * 4] = half(Float(index % 1024) / 256)
+            pixels[index * 4 + 1] = half(Float(index % 512) / 256)
+            pixels[index * 4 + 2] = half(0.3)
+            pixels[index * 4 + 3] = half(1.0)
         }
         let hdr = try #require(context.makeImage())
         var settings = FilterSettings()
